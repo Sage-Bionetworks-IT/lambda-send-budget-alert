@@ -19,7 +19,7 @@ jobs:
   include:
     - stage: validate
       script:
-        - pre-commit autoupdate
+#        - pre-commit autoupdate
         - pre-commit run --all-files
         - sam build
         - python -m pytest tests/ -v

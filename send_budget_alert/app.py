@@ -18,7 +18,6 @@ def lambda_handler(event, context):
 
     context: object
         Lambda Context runtime methods and attributes
-        Context doc: https://docs.aws.amazon.com/lambda/latest/dg/python-context-object.html
 
     Returns
     ------
@@ -35,22 +34,24 @@ def lambda_handler(event, context):
         synapse_client = synapseclient.Synapse()
         synapse_client.login(synapse_user_name, synapse_password)
         for record in event["Records"]:
-            sns=record["Sns"]
-            subject=sns["Subject"]
+            sns = record["Sns"]
+            subject = sns["Subject"]
             message = sns["Message"]
             attrs = sns["MessageAttributes"]
-            userId = attrs["SynapseId"]["Value"]                 
+            userId = attrs["SynapseId"]["Value"]
             # send email
             # https://python-docs.synapse.org/build/html/Client.html#synapseclient.Synapse.sendMessage
             userIds = [userId]
             messageSubject = subject
             messageBody = message
-            contentType="text/plain" # could be set to "text/html"
-            synapse_client.sendMessage(userIds, messageSubject, messageBody, contentType)
+            contentType = "text/plain"  # could be set to "text/html"
+            synapse_client.sendMessage(
+                userIds, messageSubject,
+                messageBody, contentType)
     except Exception as ex:
         # Send some context about this error to Lambda Logs
         print(ex)
-        errorCode=1
+        errorCode = 1
         errorMessage = str(ex)
 
     return {
