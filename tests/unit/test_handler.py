@@ -102,4 +102,3 @@ def test_lambda_handler_bad_event(bad_sns_event_no_syn_id, mocker):
     # check error code
     assert ret["errorCode"] == 1
     assert ret["errorMessage"] is not None
-
