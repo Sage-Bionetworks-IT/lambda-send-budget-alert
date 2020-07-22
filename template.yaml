@@ -20,7 +20,8 @@ Resources:
         SendBudgetAlert:
           Type: SNS # More info about SNS Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#sns
           Properties:
-            Topic: !ImportValue 'Fn::Sub': '${AWS::Region}-lambda-budgets-NotificationTopicArn'
+            Topic: !ImportValue
+             'Fn::Sub': '${AWS::Region}-lambda-budgets-NotificationTopicArn'
             Region: us-east-1
 
   FunctionRole:   # execute lambda function with this role
