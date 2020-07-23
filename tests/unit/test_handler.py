@@ -20,7 +20,7 @@ def sns_event():
               "MessageId": "790b30bd-2a13-58f4-b0fb-672c044b52ef",
               "TopicArn":
               "arn:aws:sns:us-east-1:465877038949:lambda-budgets-BudgetYRY",
-              "Subject": "test message",
+              "Subject": "AWS Budgets: service-catalog_3388489 ...hold",
               "Message": "test test",
               "Timestamp": "2020-07-21T17:55:36.052Z",
               "SignatureVersion": "1",
@@ -31,12 +31,32 @@ def sns_event():
               "UnsubscribeURL":
               "https://sns.us-east-1.amazonaws.com/?Action=Unsubscrda-310",
               "MessageAttributes": {
-                "SynapseId": {"Type": "String", "Value": "3388489"}
               }
             }
         }
       ]
     }
+
+
+def test_parse_user_id_from_subject():
+    # Happy case
+    assert "1234567" == app.parse_user_id_from_subject(
+        "AWS Budgets: service-catalog_1234567 ...hold")
+
+    # Check that it doesn't match some other number
+    assert "1234567" == app.parse_user_id_from_subject(
+        "AWS 9876 Budgets: service-catalog_1234567 ... 54321 hold")
+
+    # Check that various invalid cases correctly return None
+    assert app.parse_user_id_from_subject("") is None
+
+    assert app.parse_user_id_from_subject(None) is None
+
+    assert app.parse_user_id_from_subject(
+        "AWS Budgets: service-catalog_NotANumber foo") is None
+
+    assert app.parse_user_id_from_subject(
+        "...catalog_1234567 ...hold") is None
 
 
 def test_lambda_handler(sns_event, mocker):
@@ -57,7 +77,8 @@ def test_lambda_handler(sns_event, mocker):
 
     # check that synapse_client.sendMessage() was called correctly
     mock_synapse_client.sendMessage.assert_called_once_with(
-            ["3388489"], "test message", "test test", "text/plain")
+            ["3388489"], "AWS Budgets: service-catalog_3388489 ...hold",
+            "test test", "text/plain")
 
     # check error code
     assert ret["errorCode"] == 0

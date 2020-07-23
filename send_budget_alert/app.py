@@ -3,6 +3,20 @@ import synapseclient
 import re
 import os
 
+USER_ID_PATTERN = re.compile("service-catalog_(\\d+)")
+
+
+def parse_user_id_from_subject(s):
+    if s is None:
+        return None
+
+    result = USER_ID_PATTERN.search(s)
+
+    if result is None:
+        return None
+    else:
+        return result.group(1)
+
 
 def lambda_handler(event, context):
     """Sample pure Lambda function
@@ -37,17 +51,14 @@ def lambda_handler(event, context):
             sns = record["Sns"]
             subject = sns["Subject"]
             message = sns["Message"]
-            attrs = sns["MessageAttributes"]
-            userId = attrs["SynapseId"]["Value"]
+            userId = parse_user_id_from_subject(subject)
+            if userId is None:
+                raise ValueError("No user id in "+subject)
             # send email
             # https://python-docs.synapse.org/build/html/Client.html#synapseclient.Synapse.sendMessage
-            userIds = [userId]
-            messageSubject = subject
-            messageBody = message
-            contentType = "text/plain"  # could be set to "text/html"
             synapse_client.sendMessage(
-                userIds, messageSubject,
-                messageBody, contentType)
+                [userId], subject,
+                message, "text/plain")
     except Exception as ex:
         # Send some context about this error to Lambda Logs
         print(ex)
