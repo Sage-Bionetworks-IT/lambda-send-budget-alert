@@ -1,1 +1,1 @@
-synapseclient
+synapseclient==2.1

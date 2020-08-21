@@ -3,6 +3,14 @@ Transform: AWS::Serverless-2016-10-31
 Description: >
   Send SNS message to Synapse user as email
 
+Parameters:
+  SynapseUserKeyName:
+    Description: 'The name of the key that stores the Synapse user name'
+    Type: String
+  SynapsePasswordKeyName:
+    Description: 'The name of the key that stores the Synapse password'
+    Type: String
+
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
@@ -22,7 +30,11 @@ Resources:
           Properties:
             Topic: !ImportValue
              'Fn::Sub': '${AWS::Region}-lambda-budgets-NotificationTopicArn'
-            Region: us-east-1
+            Region: !Ref AWS::Region
+      Environment:
+        Variables:
+          SYNAPSE_USER_KEYNAME: !Ref SynapseUserKeyName
+          SYNAPSE_PASSWORD_KEYNAME: !Ref SynapsePasswordKeyName
 
   FunctionRole:   # execute lambda function with this role
     Type: AWS::IAM::Role

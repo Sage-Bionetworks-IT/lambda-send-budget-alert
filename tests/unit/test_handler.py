@@ -2,6 +2,8 @@ import json
 import pytest
 import synapseclient
 from send_budget_alert import app
+from  send_budget_alert.app import get_ssm_parameter
+import boto3
 
 
 @pytest.fixture()
@@ -58,16 +60,26 @@ def test_parse_user_id_from_subject():
     assert app.parse_user_id_from_subject(
         "...catalog_1234567 ...hold") is None
 
+MOCK_SECRETS = {'SynapseUserKeyName':'username',
+    'SynapsePasswordKeyName':'password'}
+
+def mock_ssm(key):
+    return {"Parameter":{"Value":MOCK_SECRETS[key]}}
 
 def test_lambda_handler(sns_event, mocker):
     # mock synapse client
     MockSynapse = mocker.patch('synapseclient.Synapse')
     mock_synapse_client = MockSynapse.return_value
 
+    # Mock ssm
+    mock_get_ssm_parameter = mocker.patch(
+        'send_budget_alert.app.get_ssm_parameter',
+        mock_ssm)
+
     # mock the environment
     mocker.patch.dict('os.environ',
-                      {'SYNAPSE_USER_NAME': 'username',
-                       'SYNAPSE_PASSWORD': 'password'})
+                      {'SYNAPSE_USER_KEYNAME': 'SynapseUserKeyName',
+                       'SYNAPSE_PASSWORD_KEYNAME': 'SynapsePasswordKeyName'})
 
     # method under test
     ret = app.lambda_handler(sns_event, "")
@@ -122,10 +134,15 @@ def test_lambda_handler_bad_event(bad_sns_event_no_syn_id, mocker):
     MockSynapse = mocker.patch('synapseclient.Synapse')
     mock_synapse_client = MockSynapse.return_value
 
+    # Mock ssm
+    mock_get_ssm_parameter = mocker.patch(
+        'send_budget_alert.app.get_ssm_parameter',
+        mock_ssm)
+
     # mock the environment
     mocker.patch.dict('os.environ',
-                      {'SYNAPSE_USER_NAME': 'username',
-                       'SYNAPSE_PASSWORD': 'password'})
+                      {'SYNAPSE_USER_KEYNAME': 'SynapseUserKeyName',
+                       'SYNAPSE_PASSWORD_KEYNAME': 'SynapsePasswordKeyName'})
 
     # method under test
     ret = app.lambda_handler(bad_sns_event_no_syn_id, "")

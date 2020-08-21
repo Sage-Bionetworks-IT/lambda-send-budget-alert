@@ -2,11 +2,24 @@ import json
 import synapseclient
 import re
 import os
+import logging
+import boto3
 
-USER_ID_PATTERN = re.compile("service-catalog_(\\d+)")
+log = logging.getLogger(__name__)
+log.setLevel(logging.DEBUG)
+
+BUDGET_NAME_PREFIX = 'service-catalog_'
+
+USER_ID_PATTERN = re.compile(f'{BUDGET_NAME_PREFIX}(\\d+)')
 
 
 def parse_user_id_from_subject(s):
+    '''
+    Looks in the passed string for 'service-catalog_123456'
+    and parses out the '123456' which is the Synapse user id
+
+    returns None if the input is not in this format
+    '''
     if s is None:
         return None
 
@@ -17,10 +30,51 @@ def parse_user_id_from_subject(s):
     else:
         return result.group(1)
 
+SSM_ERROR_PREFIX = 'secret not found in AWS System Manager parameter store'
+MISSING_ENVIRONMENT_VARIABLE_MESSAGE = 'Environment variable is required'
+
+
+def get_ssm_parameter(key_name):
+    return boto3.client('ssm').get_parameter(
+      Name=key_name,
+      WithDecryption=True)
+
+def get_ssm_secret(key_name):
+  '''Retrieve a secret from AWS System Manager'''
+  try:
+    response = get_ssm_parameter(key_name)
+  except ClientError as e:
+    client_error_msg = e.response['Error']['Code']
+    exception_msg = f'{SSM_ERROR_PREFIX}: key_name={key_name}; {client_error_msg}'
+    raise Exception(exception_msg)
+
+  return response['Parameter']['Value']
+
+
+def get_variables(func, var_names, error_msg):
+  '''Generic method to extract values and raise error if they are missing'''
+  values = []
+
+  for var_name in var_names:
+    value = func(var_name)
+    if not value:
+      raise ValueError(f'{error_msg}: {var_name}')
+    values.append(value)
+
+  return values
+
+
+def get_envvars():
+  '''Extract environment variables'''
+  env_var_names = [
+    'SYNAPSE_USER_KEYNAME',
+    'SYNAPSE_PASSWORD_KEYNAME'
+  ]
+  return get_variables(os.getenv, env_var_names, MISSING_ENVIRONMENT_VARIABLE_MESSAGE)
+
 
 def lambda_handler(event, context):
-    """Sample pure Lambda function
-
+    """
     Parameters
     ----------
     event: dict, required
@@ -43,8 +97,9 @@ def lambda_handler(event, context):
     errorCode = 0
     errorMessage = None
     try:
-        synapse_user_name = os.getenv("SYNAPSE_USER_NAME")
-        synapse_password = os.getenv("SYNAPSE_PASSWORD")
+        synapse_user_key_name, synapse_password_key_name  = get_envvars()
+        synapse_user_name = get_ssm_secret(synapse_user_key_name)
+        synapse_password = get_ssm_secret(synapse_password_key_name)
         synapse_client = synapseclient.Synapse()
         synapse_client.login(synapse_user_name, synapse_password)
         for record in event["Records"]:
@@ -60,8 +115,7 @@ def lambda_handler(event, context):
                 [userId], subject,
                 message, "text/plain")
     except Exception as ex:
-        # Send some context about this error to Lambda Logs
-        print(ex)
+        log.error(ex, exc_info=True)
         errorCode = 1
         errorMessage = str(ex)
 

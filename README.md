@@ -1,5 +1,9 @@
 # lambda-send-budget-alert
-A Lambda that listens to an SNS topic and forwards notifications to Synapse users by email
+A Lambda that listens to an SNS topic and forwards notifications to Synapse users by email.
+This works in conjunction with https://github.com/Sage-Bionetworks-IT/lambda-budgets,
+which generates alerts and sends them to SNS. Since AWS Budgets cannot email Synapse users,
+it instead publishes the notifications to SNS, after which this lambda converts them to
+email notifications.
 
 ### Contributions
 Contributions are welcome.
@@ -60,6 +64,9 @@ config/prod/lambda-send-budget-alert.yaml
 ```yaml
 template_path: "remote/lambda-send-budget-alert.yaml"
 stack_name: "lambda-send-budget-alert"
+parameters:
+  SynapseUserKeyName: 'lambda-send-budget-alert/synapse-username'
+  SynapsePasswordKeyName: 'lambda-send-budget-alert/synapse-password'
 stack_tags:
   Department: "Platform"
   Project: "Infrastructure"
