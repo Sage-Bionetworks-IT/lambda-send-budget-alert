@@ -65,8 +65,8 @@ config/prod/lambda-send-budget-alert.yaml
 template_path: "remote/lambda-send-budget-alert.yaml"
 stack_name: "lambda-send-budget-alert"
 parameters:
-  SynapseUserKeyName: 'lambda-send-budget-alert/synapse-username'
-  SynapsePasswordKeyName: 'lambda-send-budget-alert/synapse-password'
+  SynapseUserKeyName: '/lambda-send-budget-alert/synapse-username'
+  SynapsePasswordKeyName: '/lambda-send-budget-alert/synapse-password'
 stack_tags:
   Department: "Platform"
   Project: "Infrastructure"
@@ -79,6 +79,24 @@ hooks:
 Install the lambda using sceptre:
 ```shell script
 sceptre --var "profile=my-profile" --var "region=us-east-1" launch prod/lambda-send-budget-alert.yaml
+```
+
+## Set Synapse credentials in SSM
+
+Put in SSM the credentials for the Synapse service account used to send out email notifications.  Note that the names
+for the two secrets must match the names used in the Scepter file, described above.
+
+```
+aws ssm put-parameter \
+--name /lambda-send-budget-alert/synapse-username \
+--value "my-synapse-username" \
+--type "SecureString"
+
+aws ssm put-parameter \
+--name /lambda-send-budget-alert/synapse-password \
+--value "my-synapse-password" \
+--type "SecureString"
+
 ```
 
 ## Author

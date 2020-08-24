@@ -51,6 +51,20 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
+  SsmManagedPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: GetParamAccess
+            Action:
+              - 'ssm:*'
+            Effect: Allow
+            Resource: !Sub |
+              'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${SynapseUserKeyName}'
+              'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${SynapsePasswordKeyName}'
+
 Outputs:
   SendBudgetAlertFunctionArn:
     Description: "Send Budget Alert Lambda Function ARN"
