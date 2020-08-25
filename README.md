@@ -65,6 +65,7 @@ config/prod/lambda-send-budget-alert.yaml
 template_path: "remote/lambda-send-budget-alert.yaml"
 stack_name: "lambda-send-budget-alert"
 parameters:
+  SNSTopicARN: !stack_output_external lambda-budgets::BudgetMakerNotificationTopicArn
   SynapseUserKeyName: '/lambda-send-budget-alert/synapse-username'
   SynapsePasswordKeyName: '/lambda-send-budget-alert/synapse-password'
 stack_tags:
