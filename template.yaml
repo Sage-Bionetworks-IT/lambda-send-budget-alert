@@ -4,6 +4,9 @@ Description: >
   Send SNS message to Synapse user as email
 
 Parameters:
+  SNSTopicARN:
+    Description: 'The ARN of the SNS Topic from which to get events'
+    Type: String
   SynapseUserKeyName:
     Description: 'The name of the key that stores the Synapse user name'
     Type: String
@@ -28,8 +31,7 @@ Resources:
         SendBudgetAlert:
           Type: SNS # More info about SNS Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#sns
           Properties:
-            Topic: !ImportValue
-             'Fn::Sub': '${AWS::Region}-lambda-budgets-NotificationTopicArn'
+            Topic: !Ref SNSTopicARN
             Region: !Ref AWS::Region
       Environment:
         Variables:
@@ -50,6 +52,7 @@ Resources:
               - sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - !Ref SsmManagedPolicy
 
   SsmManagedPolicy:
     Type: AWS::IAM::ManagedPolicy
