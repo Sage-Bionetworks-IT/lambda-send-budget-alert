@@ -1,14 +1,9 @@
-# lambda-template
-Template for creating lambda repositories
-A template for quickly starting a new AWS lambda project.
-
-## Naming
-Naming conventions:
-* for a vanilla Lambda: `lambda-<context>`
-* for a Cloudformation Transform macro: `cfn-macro-<context>`
-* for a Cloudformation Custom Resource: `cfn-cr-<context>`
-
-## Development
+# lambda-send-budget-alert
+A Lambda that listens to an SNS topic and forwards notifications to Synapse users by email.
+This works in conjunction with https://github.com/Sage-Bionetworks-IT/lambda-budgets,
+which generates alerts and sends them to SNS. Since AWS Budgets cannot email Synapse users,
+it instead publishes the notifications to SNS, after which this lambda converts them to
+email notifications.
 
 ### Contributions
 Contributions are welcome.
@@ -30,7 +25,7 @@ $ sam build --use-container
 ### Run locally
 
 ```shell script
-$ sam local invoke HelloWorldFunction --event events/event.json
+$ sam local invoke SendBudgetAlertFunction --event events/event.json
 ```
 
 ### Run unit tests
@@ -57,32 +52,54 @@ This requires the correct permissions to upload to bucket
 ```shell script
 sam package --template-file .aws-sam/build/template.yaml \
   --s3-bucket essentials-awss3lambdaartifactsbucket-x29ftznj6pqw \
-  --output-template-file .aws-sam/build/lambda-template.yaml
+  --output-template-file .aws-sam/build/lambda-send-budget-alert.yaml
 
-aws s3 cp .aws-sam/build/lambda-template.yaml s3://bootstrap-awss3cloudformationbucket-19qromfd235z9/lambda-template/master/
+aws s3 cp .aws-sam/build/lambda-send-budget-alert.yaml s3://bootstrap-awss3cloudformationbucket-19qromfd235z9/lambda-send-budget-alert/master/
 ```
 
 ## Install Lambda into AWS
 Create the following [sceptre](https://github.com/Sceptre/sceptre) file
 
-config/prod/lambda-template.yaml
+config/prod/lambda-send-budget-alert.yaml
 ```yaml
-template_path: "remote/lambda-template.yaml"
-stack_name: "lambda-template"
+template_path: "remote/lambda-send-budget-alert.yaml"
+stack_name: "lambda-send-budget-alert"
+parameters:
+  SNSTopicARN: !stack_output_external lambda-budgets::BudgetMakerNotificationTopicArn
+  SynapseUserKeyName: '/lambda-send-budget-alert/synapse-username'
+  SynapsePasswordKeyName: '/lambda-send-budget-alert/synapse-password'
 stack_tags:
   Department: "Platform"
   Project: "Infrastructure"
   OwnerEmail: "it@sagebase.org"
 hooks:
   before_launch:
-    - !cmd "curl https://s3.amazonaws.com/bootstrap-awss3cloudformationbucket-19qromfd235z9/lambda-template/master/lambda-template.yaml --create-dirs -o templates/remote/lambda-template.yaml"
+    - !cmd "curl https://s3.amazonaws.com/bootstrap-awss3cloudformationbucket-19qromfd235z9/lambda-send-budget-alert/master/lambda-send-budget-alert.yaml --create-dirs -o templates/remote/lambda-send-budget-alert.yaml"
 ```
 
 Install the lambda using sceptre:
 ```shell script
-sceptre --var "profile=my-profile" --var "region=us-east-1" launch prod/lambda-template.yaml
+sceptre --var "profile=my-profile" --var "region=us-east-1" launch prod/lambda-send-budget-alert.yaml
+```
+
+## Set Synapse credentials in SSM
+
+Put in SSM the credentials for the Synapse service account used to send out email notifications.  Note that the names
+for the two secrets must match the names used in the Scepter file, described above.
+
+```
+aws ssm put-parameter \
+--name /lambda-send-budget-alert/synapse-username \
+--value "my-synapse-username" \
+--type "SecureString"
+
+aws ssm put-parameter \
+--name /lambda-send-budget-alert/synapse-password \
+--value "my-synapse-password" \
+--type "SecureString"
+
 ```
 
 ## Author
 
-Your Name Here.
+brucehoff
