@@ -1,7 +1,18 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  Hello World lambda
+  Send SNS message to Synapse user as email
+
+Parameters:
+  SNSTopicARN:
+    Description: 'The ARN of the SNS Topic from which to get events'
+    Type: String
+  SynapseUserKeyName:
+    Description: 'The name of the key that stores the Synapse user name'
+    Type: String
+  SynapsePasswordKeyName:
+    Description: 'The name of the key that stores the Synapse password'
+    Type: String
 
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
@@ -9,19 +20,23 @@ Globals:
     Timeout: 3
 
 Resources:
-  HelloWorldFunction:
+  SendBudgetAlertFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
-      CodeUri: hello_world/
+      CodeUri: send_budget_alert/
       Handler: app.lambda_handler
       Runtime: python3.6
       Role: !GetAtt FunctionRole.Arn
       Events:
-        HelloWorld:
-          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+        SendBudgetAlert:
+          Type: SNS # More info about SNS Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#sns
           Properties:
-            Path: /hello
-            Method: get
+            Topic: !Ref SNSTopicARN
+            Region: !Ref AWS::Region
+      Environment:
+        Variables:
+          SYNAPSE_USER_KEYNAME: !Ref SynapseUserKeyName
+          SYNAPSE_PASSWORD_KEYNAME: !Ref SynapsePasswordKeyName
 
   FunctionRole:   # execute lambda function with this role
     Type: AWS::IAM::Role
@@ -37,17 +52,26 @@ Resources:
               - sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - !Ref SsmManagedPolicy
+
+  SsmManagedPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: GetParamAccess
+            Action:
+              - 'ssm:*'
+            Effect: Allow
+            Resource: !Sub |
+              'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${SynapseUserKeyName}'
+              'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${SynapsePasswordKeyName}'
 
 Outputs:
-  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
-  # Find out more about other implicit resources you can reference within SAM
-  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
-  HelloWorldApi:
-    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
-  HelloWorldFunctionArn:
-    Description: "Hello World Lambda Function ARN"
-    Value: !GetAtt HelloWorldFunction.Arn
-  HelloWorldFunctionRoleArn:
-    Description: "Implicit IAM Role created for Hello World function"
+  SendBudgetAlertFunctionArn:
+    Description: "Send Budget Alert Lambda Function ARN"
+    Value: !GetAtt SendBudgetAlertFunction.Arn
+  SendBudgetAlertFunctionRoleArn:
+    Description: "Implicit IAM Role created for SendBudgetAlert function"
     Value: !GetAtt FunctionRole.Arn
