@@ -60,12 +60,17 @@ Resources:
       PolicyDocument:
         Version: 2012-10-17
         Statement:
-          - Sid: GetParamAccess
+          - Sid: GetSynapseUserKeyParam
             Action:
               - 'ssm:*'
             Effect: Allow
             Resource:
               - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${SynapseUserKeyName}'
+          - Sid: GetSynapsePasswordKeyParam
+            Action:
+              - 'ssm:*'
+            Effect: Allow
+            Resource:
               - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${SynapsePasswordKeyName}'
 
 Outputs:
