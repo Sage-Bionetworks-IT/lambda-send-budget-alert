@@ -100,6 +100,8 @@ def lambda_handler(event, context):
         synapse_user_key_name, synapse_password_key_name  = get_envvars()
         synapse_user_name = get_ssm_secret(synapse_user_key_name)
         synapse_password = get_ssm_secret(synapse_password_key_name)
+        # Lambda only allows writing to /tmp.  Omitting this results in: [Errno 30] Read-only file system: ‘/home/sbx_user...’
+        synapseclient.core.cache.CACHE_ROOT_DIR = '/tmp/.synapseCache'
         synapse_client = synapseclient.Synapse()
         synapse_client.login(synapse_user_name, synapse_password)
         for record in event["Records"]:
