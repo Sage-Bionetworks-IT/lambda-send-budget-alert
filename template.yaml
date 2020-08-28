@@ -64,9 +64,9 @@ Resources:
             Action:
               - 'ssm:*'
             Effect: Allow
-            Resource: !Sub |
-              'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${SynapseUserKeyName}'
-              'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${SynapsePasswordKeyName}'
+            Resource:
+              - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${SynapseUserKeyName}'
+              - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${SynapsePasswordKeyName}'
 
 Outputs:
   SendBudgetAlertFunctionArn:

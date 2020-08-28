@@ -4,6 +4,7 @@ import re
 import os
 import logging
 import boto3
+from botocore.exceptions import ClientError
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -79,10 +80,9 @@ def lambda_handler(event, context):
     ----------
     event: dict, required
         https://docs.aws.amazon.com/lambda/latest/dg/with-sns.html
-        We use three fields from each record:
+        We use two fields from each record:
         (1) 'subject' the notification subject
         (2) 'message' this is the notification to forward
-        (3) MessageAttributes.SynapseId.Value the Synapse user Id
 
     context: object
         Lambda Context runtime methods and attributes
