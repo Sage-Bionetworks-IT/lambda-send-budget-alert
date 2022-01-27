@@ -6,6 +6,7 @@ verify_ssl = true
 
 [dev-packages]
 pytest = "~=6.0.1"
+pytest-mock = "~=3.2.0"
 requests-mock = "~=1.8.0"
 pre-commit = "~=2.7.1"
 aws-sam-cli = "~=1.37.0"
