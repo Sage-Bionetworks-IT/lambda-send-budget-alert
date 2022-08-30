@@ -25,7 +25,7 @@ Resources:
     Properties:
       CodeUri: send_budget_alert/
       Handler: app.lambda_handler
-      Runtime: python3.6
+      Runtime: python3.9
       Role: !GetAtt FunctionRole.Arn
       Events:
         SendBudgetAlert:
