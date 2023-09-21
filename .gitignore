@@ -137,3 +137,6 @@ dmypy.json
 
 # sam
 .aws-sam/
+
+# generated dynamically from Pipfile
+send_budget_alert/requirements.txt
